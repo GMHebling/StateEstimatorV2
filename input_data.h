@@ -86,7 +86,7 @@ class input_data {
 
             topology.initializeTopology(grafo, numeroBarras, numeroAlimentadores);
             alimentador = topology.feeder;
-            topology.buildNetworkModel(allRamos, numeroRamos);
+            topology.buildNetworkModel(grafo, numeroBarras, allRamos, numeroRamos, Sbase);
             
         }
 
