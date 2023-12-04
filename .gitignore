@@ -1,3 +1,6 @@
 /.DS_Store
-.o
+*.o
 /.vscode
+*.out
+.gitignore
+testEstimator

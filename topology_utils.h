@@ -3,6 +3,8 @@
 
 #include "data_structures.h"
 #include "mat_utils.h"
+#include <math.h>
+
 
 class topology_utils {
     public:
@@ -15,7 +17,7 @@ class topology_utils {
         void buildNetworkModel(GRAFO *grafo, int numeroBarras, DRAM *allRamos, int numeroRamos, double Sbase)
         {
             calculaPU(grafo, numeroBarras, allRamos,  numeroRamos, Sbase);
-            //atualizaTaps(allRamos, numeroRamos);
+            atualizaTaps(allRamos, numeroRamos);
         }
 
 
@@ -35,7 +37,6 @@ class topology_utils {
             //     printf("Erro -- Nao foi possivel alocar espaco de memoria para alimentadores !!!!");
             //     exit(1); 
             // }
-            
             for(i=0; i<numeroBarras; i++){ 
                 visitado[i] = 0;
                 if(grafo[i].tipo == 2){
@@ -85,7 +86,8 @@ class topology_utils {
                     } 
             }
         }
-        void adicionaNoNaFila(FILABARRAS ** fila, long int idNo) {
+        void adicionaNoNaFila(FILABARRAS ** fila, long int idNo) 
+        {
             FILABARRAS *novoVertice = NULL;
             FILABARRAS *aux = NULL;
         
@@ -107,7 +109,8 @@ class topology_utils {
                 aux->prox = novoVertice;
             }
         }
-        void apontaProxNoNaFila(FILABARRAS ** fila) {
+        void apontaProxNoNaFila(FILABARRAS ** fila) 
+        {
             FILABARRAS *aux = NULL;
             
             aux = *fila;
@@ -115,8 +118,8 @@ class topology_utils {
             *fila = aux;
             
         }
-
-        void atualizaTaps(DRAM *allRamos, int numeroRamos){
+        void atualizaTaps(DRAM *allRamos, int numeroRamos)
+        {
             int i;        
             for(i=0;i<numeroRamos;i++){
                 if (allRamos[i].tipo == 2){
@@ -158,18 +161,10 @@ class topology_utils {
         void calculaPU(GRAFO *grafo, int numeroBarras, DRAM *ramos, int numeroRamos, double Sbase) 
         {
             int i, idNo, idRam;
-            FILABARRAS * lista_barras = NULL;
-            long int barraAdj = 0;
             double Vbase;
-            
             
             //Transforma em PU informações dos nós do grafo
             for (idNo=0;idNo<numeroBarras;idNo++){
-                //Transforma em pu os dados de carga - Futuro para fluxo de carga
-                /*for(i=0;i<grafo[idNo].barra->nloads;i++){
-
-                }*/ 
-                
                 //Transforma em PU os shunts da rede elétrica
                 for(i=0;i<grafo[idNo].barra->nshunts;i++){
                     grafo[idNo].barra->shunts[i].Qnom[0] = 1000*grafo[idNo].barra->shunts[i].Qnom[0]/Sbase; 
@@ -177,11 +172,6 @@ class topology_utils {
                     grafo[idNo].barra->shunts[i].Qnom[2] = 1000*grafo[idNo].barra->shunts[i].Qnom[2]/Sbase;
                     montaQuadripoloShunt(&grafo[idNo],&grafo[idNo].barra->shunts[i]);
                 }
-                
-                /*//Transforma em pu os dados de GDs - Futuro para fluxo de carga
-                for(i=0;i<grafo[idNo].barra->ngds;i++){
-
-                }*/
             }
             
             //Transforma em PU informações dos ramos do grafo
@@ -208,27 +198,23 @@ class topology_utils {
                         montaQuadripoloLinha(&ramos[idRam], &ramos[idRam].linha);
                         break;
                     case 1:
-                        ramos[idRam].trafo.R = 3*ramos[idRam].trafo.R/((pow(Vbase,2))/Sbase);
-                        ramos[idRam].trafo.X = 3*ramos[idRam].trafo.X/((pow(Vbase,2))/Sbase);
+                        ramos[idRam].trafo.R = 3.0*ramos[idRam].trafo.R/((pow(Vbase,2))/Sbase);
+                        ramos[idRam].trafo.X = 3.0*ramos[idRam].trafo.X/((pow(Vbase,2))/Sbase);
                         
-                        //montaQuadripoloTrafo(&ramos[idRam], &ramos[idRam].trafo);
+                        montaQuadripoloTrafo(&ramos[idRam], &ramos[idRam].trafo);
                         break;
                     case 2:
-                        ramos[idRam].regulador.R = 3*ramos[idRam].regulador.R/((pow(Vbase,2))/Sbase);
-                        ramos[idRam].regulador.X = 3*ramos[idRam].regulador.X/((pow(Vbase,2))/Sbase);
+                        ramos[idRam].regulador.R = 3.0*ramos[idRam].regulador.R/((pow(Vbase,2))/Sbase);
+                        ramos[idRam].regulador.X = 3.0*ramos[idRam].regulador.X/((pow(Vbase,2))/Sbase);
                         
-                        //montaQuadripoloRegulador(&ramos[idRam], &ramos[idRam].regulador);
+                        montaQuadripoloRegulador(&ramos[idRam], &ramos[idRam].regulador);
                         break;    
                 }
             }   
         }
-
-
-        //TODO: corrigir alocacao de matrizes complexas
-        //TODO: corrigir outras funções de números complexos
         void montaQuadripoloShunt(GRAFO *no, DSHNT *shunt)
         {
-            int aux = 1, i, j;
+            int i, j;
             std::complex<double> ya,yb,yc, **Yi, **Yii, **Yiii, **Ysh;
             
             //Aloca Matrizes de Quadripolos
@@ -242,9 +228,9 @@ class topology_utils {
             
             //Admitância do trafo
             
-            ya = std::complex<double> (0, shunt->Qnom[0]/(pow(shunt->Vbase/sqrt(3),2)/pow(no->Vbase,2)));
-            yb = std::complex<double> (0, shunt->Qnom[1]/(pow(shunt->Vbase/sqrt(3),2)/pow(no->Vbase,2)));
-            yc = std::complex<double> (0, shunt->Qnom[2]/(pow(shunt->Vbase/sqrt(3),2)/pow(no->Vbase,2)));
+            ya = std::complex<double> (0, shunt->Qnom[0]/(pow(shunt->Vbase/sqrt(3.0),2)/pow(no->Vbase,2)));
+            yb = std::complex<double> (0, shunt->Qnom[1]/(pow(shunt->Vbase/sqrt(3.0),2)/pow(no->Vbase,2)));
+            yc = std::complex<double> (0, shunt->Qnom[2]/(pow(shunt->Vbase/sqrt(3.0),2)/pow(no->Vbase,2)));
             
             //Yi
             Yi[0][0] = std::complex<double> (1, 0)*ya;
@@ -267,24 +253,24 @@ class topology_utils {
             Yii[2][1] = std::complex<double> (-1, 0)*yb;
             Yii[2][2] = std::complex<double> (2, 0)*yc;
             //Yiii
-            Yiii[0][0] = std::complex<double> (-1/(pow(3,0.5)), 0)*ya;
-            Yiii[0][1] = std::complex<double> (1/(pow(3,0.5)), 0)*yb;
+            Yiii[0][0] = std::complex<double> (-1/(pow(3.0,0.5)), 0)*ya;
+            Yiii[0][1] = std::complex<double> (1/(pow(3.0,0.5)), 0)*yb;
             Yiii[0][2] = 0;
             Yiii[1][0] = 0;
-            Yiii[1][1] = std::complex<double> (-1/(pow(3,0.5)), 0)*yb;
-            Yiii[1][2] = std::complex<double> (1/(pow(3,0.5)), 0)*yc;
-            Yiii[2][0] = std::complex<double> (1/(pow(3,0.5)), 0)*ya;
+            Yiii[1][1] = std::complex<double> (-1/(pow(3.0,0.5)), 0)*yb;
+            Yiii[1][2] = std::complex<double> (1/(pow(3.0,0.5)), 0)*yc;
+            Yiii[2][0] = std::complex<double> (1/(pow(3.0,0.5)), 0)*ya;
             Yiii[2][1] = 0;
-            Yiii[2][2] = std::complex<double> (-1/(pow(3,0.5)), 0)*yc;
+            Yiii[2][2] = std::complex<double> (-1/(pow(3.0,0.5)), 0)*yc;
             
             if(shunt->lig == 1){ //Ligação YN
                 Ysh = matUtils.c_matIgual(Yi, 3);
             }
             else if(shunt->lig == 2){ //Ligação D trifásico
                 Ysh = matUtils.c_matIgual(Yiii, 3);
-                Ysh[2][0] = Ysh[2][0] + std::complex<double> (1, 0); //Sequência zero para manter o quadripólo com posto completo
-                Ysh[2][1] = Ysh[2][1] + std::complex<double> (1, 0);
-                Ysh[2][2] = Ysh[2][2] + std::complex<double> (1, 0);
+                Ysh[2][0] = Ysh[2][0] + std::complex<double> (1.0, 0); //Sequência zero para manter o quadripólo com posto completo
+                Ysh[2][1] = Ysh[2][1] + std::complex<double> (1.0, 0);
+                Ysh[2][2] = Ysh[2][2] + std::complex<double> (1.0, 0);
             }
             else if(shunt->lig == 3){ //Ligação Y
                 Ysh = matUtils.c_matIgual(Yii, 3);
@@ -295,11 +281,9 @@ class topology_utils {
                 }
             }
         }
-        //void montaQuadripoloLinha
         void montaQuadripoloLinha(DRAM *ramo, DLIN *linha)
         {
-            int aux = 1;
-            std::complex<double> y, **Zl,**B;
+            std::complex<double> **Zl,**B;
             
             //Aloca Matrizes de Quadripolos
             ramo->Ypp = matUtils.c_matAloca(3);
@@ -363,7 +347,279 @@ class topology_utils {
             ramo->Yss[2][1] = ramo->Yss[2][1] + B[2][1];
             ramo->Yss[2][2] = ramo->Yss[2][2] + B[2][2];
         }
-        //void montaQuadripoloTrafo
-        //void montaQuadripoloRegulador
+        void montaQuadripoloTrafo(DRAM *ramo, DTRF *trafo)
+        {
+            std::complex<double> y, **Yi, **Yii,**Yiii;
+            
+            //Aloca Matrizes de Quadripolos
+            ramo->Ypp = matUtils.c_matAloca(3);
+            ramo->Yps = matUtils.c_matAloca(3);
+            ramo->Ysp = matUtils.c_matAloca(3);
+            ramo->Yss = matUtils.c_matAloca(3);
+            
+            //Aloca Matrizes de Ligação D-Y-YN
+            Yi = matUtils.c_matAloca(3);
+            Yii = matUtils.c_matAloca(3);
+            Yiii = matUtils.c_matAloca(3);
+            
+            //Admitância do trafo
+            y = std::complex<double>(1,0)/std::complex<double>(trafo->R, trafo->X);
+            
+            //Yi
+            Yi[0][0] = 1;
+            Yi[0][1] = 0;
+            Yi[0][2] = 0;
+            Yi[1][0] = 0;
+            Yi[1][1] = 1;
+            Yi[1][2] = 0;
+            Yi[2][0] = 0;
+            Yi[2][1] = 0;
+            Yi[2][2] = 1;
+            //Yii
+            Yii[0][0] = 2;
+            Yii[0][1] = -1;
+            Yii[0][2] = -1;
+            Yii[1][0] = -1;
+            Yii[1][1] = 2;
+            Yii[1][2] = -1;
+            Yii[2][0] = -1;
+            Yii[2][1] = -1;
+            Yii[2][2] = 2;
+            //Yiii
+            Yiii[0][0] = -1.0/(pow(3.0,0.5));
+            Yiii[0][1] = 1.0/(pow(3.0,0.5));
+            Yiii[0][2] = 0;
+            Yiii[1][0] = 0;
+            Yiii[1][1] = -1.0/(pow(3.0,0.5));
+            Yiii[1][2] = 1.0/(pow(3.0,0.5));
+            Yiii[2][0] = 1.0/(pow(3.0,0.5));
+            Yiii[2][1] = 0;
+            Yiii[2][2] = -1.0/(pow(3.0,0.5));
+            
+            Yi = matUtils.c_matMultEsc(Yi, y, 3);
+            Yii = matUtils.c_matMultEsc(Yii, y/std::complex<double>(3,0), 3);
+            Yiii = matUtils.c_matMultEsc(Yiii, y, 3);
+                
+            if((trafo->lig_pri == 1)&& (trafo->lig_sec == 1)){ //Ligação YN-YN
+                ramo->Ypp = matUtils.c_matIgual(Yi, 3);
+                ramo->Yps = matUtils.c_matIgual(Yi, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Yps, -1, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yi, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1, 3);
+                ramo->Yss = matUtils.c_matIgual(Yi, 3);
+            }
+            else if((trafo->lig_pri == 1)&& (trafo->lig_sec == 3)){ //Ligação YN-Y
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Yps, -1, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yii, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+                ramo->Ypp[2][0] = ramo->Ypp[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Ypp[2][1] = ramo->Ypp[2][1] + 100*std::abs(y);
+                ramo->Ypp[2][2] = ramo->Ypp[2][2] + 100*std::abs(y);
+            }
+            else if((trafo->lig_pri == 1)&& (trafo->lig_sec == 2)){ //Ligação YN-D
+                ramo->Ypp = matUtils.c_matIgual(Yi, 3);
+                ramo->Yps = matUtils.c_matIgual(Yiii, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yiii, 3);
+                ramo->Ysp = matUtils.c_matTransp(ramo->Ysp, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+                ramo->Yss[2][0] = ramo->Yss[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Yss[2][1] = ramo->Yss[2][1] + 100*std::abs(y);
+                ramo->Yss[2][2] = ramo->Yss[2][2] + 100*std::abs(y);
+            }
+            else if((trafo->lig_pri == 3)&& (trafo->lig_sec == 1)){ //Ligação Y-YN
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Yps, -1, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yii, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+                ramo->Yss[2][0] = ramo->Yss[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Yss[2][1] = ramo->Yss[2][1] + 100*std::abs(y);
+                ramo->Yss[2][2] = ramo->Yss[2][2] + 100*std::abs(y);
+            }
+            else if((trafo->lig_pri == 3)&& (trafo->lig_sec == 3)){ //Ligação Y-Y
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Yps, -1, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yii, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+                ramo->Yss[2][0] = ramo->Yss[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Yss[2][1] = ramo->Yss[2][1] + 100*std::abs(y); //Pensar se trata-se de simplificação, pois pode existir tensão de neutro neste caso, mas não irá te corrente de neutro.
+                ramo->Yss[2][2] = ramo->Yss[2][2] + 100*std::abs(y);
+            }
+            else if((trafo->lig_pri == 3)&& (trafo->lig_sec == 2)){ //Ligação Y-D
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yiii, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yiii, 3);
+                ramo->Ysp = matUtils.c_matTransp(ramo->Ysp, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+                ramo->Yss[2][0] = ramo->Yss[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Yss[2][1] = ramo->Yss[2][1] + 100*std::abs(y);
+                ramo->Yss[2][2] = ramo->Yss[2][2] + 100*std::abs(y);
+            }
+            else if((trafo->lig_pri == 2)&& (trafo->lig_sec == 1)){ //Ligação D-YN
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yiii, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yiii, 3);
+                ramo->Ysp = matUtils.c_matTransp(ramo->Ysp, 3);
+                ramo->Yss = matUtils.c_matIgual(Yi, 3);
+                ramo->Ypp[2][0] = ramo->Ypp[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Ypp[2][1] = ramo->Ypp[2][1] + 100*std::abs(y);
+                ramo->Ypp[2][2] = ramo->Ypp[2][2] + 100*std::abs(y);
+                ramo->Yps[2][0] = ramo->Yps[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Yps[2][1] = ramo->Yps[2][1] + 100*std::abs(y);
+                ramo->Yps[2][2] = ramo->Yps[2][2] + 100*std::abs(y);
+            }
+            else if((trafo->lig_pri == 2)&& (trafo->lig_sec == 3)){ //Ligação D-Y
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yiii, 3);
+                ramo->Yps = matUtils.c_matTransp(ramo->Yps, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yiii, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+                ramo->Ypp[2][0] = ramo->Ypp[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Ypp[2][1] = ramo->Ypp[2][1] + 100*std::abs(y);
+                ramo->Ypp[2][2] = ramo->Ypp[2][2] + 100*std::abs(y);
+                
+                // Aproximação para o caso do Y não aterrado - tensão de sequência é igual a zero no secundário - fica igual DYn
+                ramo->Yps[2][0] = ramo->Yps[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Yps[2][1] = ramo->Yps[2][1] + 100*std::abs(y);
+                ramo->Yps[2][2] = ramo->Yps[2][2] + 100*std::abs(y);
+            }
+            else if((trafo->lig_pri == 2)&& (trafo->lig_sec == 2)){ //Ligação D-D
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual( Yii, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Ysp, -1, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yii, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+                ramo->Yss[2][0] = ramo->Yss[2][0] + 100*std::abs(y); //Sequência zero para manter o quadripólo com posto completo
+                ramo->Yss[2][1] = ramo->Yss[2][1] + 100*std::abs(y);
+                ramo->Yss[2][2] = ramo->Yss[2][2] + 100*std::abs(y);
+            }
+        }
+        void montaQuadripoloRegulador(DRAM *ramo, DREG *reg)
+        {
+            std::complex<double> y, **Yi, **Yii,**Yiii;
+            
+            //Aloca Matrizes de Quadripolos
+            ramo->Ypp = matUtils.c_matAloca(3);
+            ramo->Yps = matUtils.c_matAloca(3);
+            ramo->Ysp = matUtils.c_matAloca(3);
+            ramo->Yss = matUtils.c_matAloca(3);
+            
+            //Aloca Matrizes de Ligação D-Y-YN
+            Yi = matUtils.c_matAloca(3);
+            Yii = matUtils.c_matAloca(3);
+            Yiii = matUtils.c_matAloca(3);
+            
+            //Admitância do trafo
+            y = std::complex<double>(1, 0)/std::complex<double>(reg->R, reg->X);
+            
+            //Yi
+            Yi[0][0] = 1.0;
+            Yi[0][1] = 0;
+            Yi[0][2] = 0;
+            Yi[1][0] = 0;
+            Yi[1][1] = 1.0;
+            Yi[1][2] = 0;
+            Yi[2][0] = 0;
+            Yi[2][1] = 0;
+            Yi[2][2] = 1.0;
+            //Yii
+            Yii[0][0] = 2.0;
+            Yii[0][1] = -1.0;
+            Yii[0][2] = -1.0;
+            Yii[1][0] = -1.0;
+            Yii[1][1] = 2.0;
+            Yii[1][2] = -1.0;
+            Yii[2][0] = -1.0;
+            Yii[2][1] = -1.0;
+            Yii[2][2] = 2.0;
+            //Yiii
+            Yiii[0][0] = -1.0/(pow(3.0,0.5));
+            Yiii[0][1] = 1.0/(pow(3.0,0.5));
+            Yiii[0][2] = 0;
+            Yiii[1][0] = 0;
+            Yiii[1][1] = -1.0/(pow(3.0,0.5));
+            Yiii[1][2] = 1.0/(pow(3.0,0.5));
+            Yiii[2][0] = 1.0/(pow(3.0,0.5));
+            Yiii[2][1] = 0;
+            Yiii[2][2] = -1.0/(pow(3.0,0.5));
+            
+            
+            //Feito somente para Yn
+            switch (ramo->fases){
+                case 1:
+                    Yi[1][1] = 0;
+                    Yi[2][2] = 0;
+                    break;    
+                case 2:
+                    Yi[0][0] = 0;
+                    Yi[2][2] = 0;
+                    break;
+                case 3:
+                    Yi[1][1] = 0;
+                    Yi[0][0] = 0;
+                    break;
+                case 4:
+                    Yi[2][2] = 0;
+                    break;    
+                case 5:
+                    Yi[1][1] = 0;
+                    break;
+                case 6:
+                    Yi[0][0] = 0;
+                    break; 
+            }   
+            
+            Yi = matUtils.c_matMultEsc(Yi, y, 3);
+            Yii = matUtils.c_matMultEsc(Yii, y/std::complex<double>(3,0), 3);
+            Yiii = matUtils.c_matMultEsc(Yiii, y, 3);
+            
+            //Feito Somente para YN!!!!!!!!!!!!!!!!!!!!!!!!!
+            if(reg->lig == 1){ //Ligação YN
+                ramo->Ypp = matUtils.c_matIgual(Yi, 3);
+                ramo->Yps = matUtils.c_matIgual(Yi, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Yps, -1.0, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yi, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1.0, 3);
+                ramo->Yss = matUtils.c_matIgual(Yi, 3);
+            }
+            else if(reg->lig == 2){ //Ligação D
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Yps, -1.0, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yii, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1.0, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+            }
+            else if(reg->lig == 3){ //Ligação Y
+                ramo->Ypp = matUtils.c_matIgual(Yi, 3);
+                ramo->Yps = matUtils.c_matIgual(Yiii, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yiii, 3);
+                ramo->Ysp = matUtils.c_matTransp(ramo->Ysp, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+            }
+            else if(reg->lig == 4){ //Ligação OYn
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Yps, -1.0, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yii, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1.0, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+            }
+            else if(reg->lig == 5){ //Ligação OD
+                ramo->Ypp = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matIgual(Yii, 3);
+                ramo->Yps = matUtils.c_matMultEsc(ramo->Yps, -1.0, 3);
+                ramo->Ysp = matUtils.c_matIgual(Yii, 3);
+                ramo->Ysp = matUtils.c_matMultEsc(ramo->Ysp, -1.0, 3);
+                ramo->Yss = matUtils.c_matIgual(Yii, 3);
+            }
+        }
 };
 #endif
