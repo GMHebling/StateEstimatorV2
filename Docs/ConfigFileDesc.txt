@@ -22,3 +22,4 @@ ORDERING
     #define SPQR_ORDERING_BEST 8        /* try COLAMD, AMD, and METIS; pick best */
     #define SPQR_ORDERING_BESTAMD 9 
 }
+FLAG_POWERFLOW

@@ -51,6 +51,8 @@ public:
 
   int i, j;
 
+  int flag_powerflow;
+
   double Sbase = 1000000; // VA
 
   std::string dataDir;
@@ -100,6 +102,7 @@ public:
     grafo = geraGrafo(barras, numeroBarras, allRamos, numeroRamos);
 
     std::cout << "Reading DMED file\n";
+    std::cout << " flag powerflow: " << flag_powerflow << std::endl;
     medidas = leituraMedidas(allRamos, numeroRamos, barras, numeroBarras, grafo,
                              Sbase, numeroMedidas, 0);
     std::cout << "Measurement preprocessing\n";
@@ -128,7 +131,7 @@ private:
   topology_utils topology;
 
   void readConfigFile(std::string &dataDir, std::string &dataFolder) {
-    char linha[1000], *pasta, *folder, *estType, *idSim, *orderType;
+    char linha[1000], *pasta, *folder, *estType, *idSim, *orderType, *flagPowerflow;
     std::cout << "Leitura de dados da rede eletrica...\n";
 
     // Recebe o nome da pasta com os dados a serem lidos - arquivo config.txt
@@ -154,6 +157,9 @@ private:
     fgets(linha, 1000, config);
     orderType = getField(linha,1);
     this->orderType = atoi(orderType);
+    fgets(linha, 1000, config);
+    flagPowerflow = getField(linha, 1);
+    this->flag_powerflow = atoi(flagPowerflow);
     fclose(config);
   }
   char *getField(char *lin, int num) {
@@ -1051,13 +1057,20 @@ private:
   DMED *leituraMedidas(DRAM *ramos, int numeroRamos, DBAR *barras,
                        int numeroBarras, GRAFO *grafo, double Sbase,
                        int &numeroMeds, int flagVirtual) {
-    if (flagVirtual == 0) {
-      std::string dbarFolder = dataDir + dataFolder + "/DMED.csv";
-    } else {
-      std::string dbarFolder = dataDir + dataFolder + "/DVMED.csv";
-    }
+    
+    std::string dbarFolder;
+    // if (flagVirtual == 0) {
+    //   std::string dbarFolder = dataDir + dataFolder + "/DMED.csv";
+    // } else if (flagVirtual == 1) {
+    //   std::string dbarFolder = dataDir + dataFolder + "/DVMED.csv";
+    // };
 
-    std::string dbarFolder = dataDir + dataFolder + "/DMED.csv";
+    if (flag_powerflow == 1)
+    {
+      dbarFolder = dataDir + dataFolder + "/DMED_fp.csv"; 
+    } else {
+      dbarFolder = dataDir + dataFolder + "/DMED.csv";
+    }; 
     const char *barFolder = dbarFolder.c_str();
     FILE *arquivo = fopen(barFolder, "r");
     if (arquivo == NULL) {

@@ -88,6 +88,10 @@ private:
   }
   void HATCHELEstimator() { std::cout << "HATCHEL Estimator\n"; }
   void BCEstimator() { std::cout << "Branch Current Estimator\n"; }
-  void AMBEstimator() { std::cout << "AMB Estimator\n"; }
+  void AMBEstimator() 
+  { 
+    std::cout << "|---------AMB State Estimator---------|\n"; 
+    
+  }
 };
 #endif

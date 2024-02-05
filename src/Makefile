@@ -1,5 +1,5 @@
 CC=clang++
-CFLAGS=-std=gnu++11 -Wall -g -I/Users/gustavohebling/Code/Projects/SolverEngine/ -O3
+CFLAGS=-std=gnu++11 -Wall -g -I/Users/gustavohebling/Code/Projects/SolverEngine/
 LDFLAGS= -lcholmod -lspqr -lsuitesparseconfig -lm -lstdc++ "-Wl,-rpath,/usr/local/lib/"
 
 testEstimator: main.o data_structures.h electrical_utils.h estimator.h input_data.h mat_utils.h optimization_utils.h topology_utils.h wls_utils.h sparseSystem.h engine.h output_utils.h

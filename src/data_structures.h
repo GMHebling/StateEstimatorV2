@@ -33,7 +33,8 @@ typedef enum {
   WLS, // 0
   HATCHEL,
   BRANCHCURRENT,
-  AMB
+  AMB, 
+  POWERFLOW
 } ESTIMATOR_TYPE;
 
 typedef enum { NOT_CONVERGENCE, CONVERGENCE } CONV_STATUS;
