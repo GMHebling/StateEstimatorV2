@@ -77,6 +77,10 @@ private:
         std::cout << "| Estimation process completed in " << duration.count() << " ms |" << std::endl;
         ou.writeEstimatedState(networkData.grafo, networkData.numeroBarras);
         ou.writeDMEDResult(networkData.medidas_pu, networkData.numeroMedidas);
+        if (networkData.flag_powerflow == 1)
+        {
+          ou.writeReferenceFile(networkData.grafo, networkData.numeroBarras, networkData.Sbase);
+        }
         break;
       }
       wlsUtils.updateSolution(networkData); 

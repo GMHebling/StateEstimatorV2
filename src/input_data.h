@@ -102,7 +102,6 @@ public:
     grafo = geraGrafo(barras, numeroBarras, allRamos, numeroRamos);
 
     std::cout << "Reading DMED file\n";
-    std::cout << " flag powerflow: " << flag_powerflow << std::endl;
     medidas = leituraMedidas(allRamos, numeroRamos, barras, numeroBarras, grafo,
                              Sbase, numeroMedidas, 0);
     std::cout << "Measurement preprocessing\n";
