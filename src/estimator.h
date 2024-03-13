@@ -79,7 +79,7 @@ private:
         ou.writeDMEDResult(networkData.medidas_pu, networkData.numeroMedidas);
         if (networkData.flag_powerflow == 1)
         {
-          ou.writeReferenceFile(networkData.grafo, networkData.numeroBarras, networkData.Sbase);
+          ou.writeReferenceFile(networkData.grafo, networkData.numeroBarras, 1000);
         }
         break;
       }

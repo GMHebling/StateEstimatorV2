@@ -178,7 +178,6 @@ def PowerFlow(md, sd, network_model, loading, method):
     x = pd.read_csv(filename, sep = '\t',header=None)
     x.columns = ['regua','val']
     
-    #x = x[(x['regua'] != -0.01) & (x['regua'] != -0.11) & (x['regua'] != -0.21)]
     
     Cov_X = []
     
